@@ -38,8 +38,9 @@ class GameScene: SKScene {
     }
     
     func enemyMove(enemy : SKSpriteNode) {
-        let move : SKAction = SKAction.move(to: CGPoint(x: frame.width/2, y: frame.height/2), duration: 1)
-        enemy.run(move)
+        let move : SKAction = SKAction.move(to: CGPoint(x: Int.random(in: 0...Int(frame.width)), y: Int.random(in: 0...Int(frame.height))), duration: 1)
+        let repeatAction : SKAction = SKAction.repeatForever(move)
+        enemy.run(repeatAction)
     }
     
 }
