@@ -10,10 +10,11 @@ import SpriteKit
 import GameplayKit
 import GameController
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
+    var player : SKSpriteNode = SKSpriteNode()
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -21,8 +22,24 @@ class GameScene: SKScene {
         
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
+        player = childNode(withName: "Player") as! SKSpriteNode
+        
+        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
+        self.physicsBody = border
+        self.physicsBody?.categoryBitMask = 8
+        self.physicsBody?.contactTestBitMask = 2
+        
+        physicsWorld.contactDelegate = self
         
     }//end didmove
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        if (contact.bodyA.categoryBitMask == 4) {
+            contact.bodyA.node?.removeFromParent()
+        } else {
+            contact.bodyB.node?.removeFromParent()
+        }
+    }
      
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
@@ -69,6 +86,12 @@ class GameScene: SKScene {
         }
         
         enemy.position = CGPoint(x: x, y: y)
+        enemy.physicsBody = SKPhysicsBody(rectangleOf: enemy.frame.size)
+        enemy.physicsBody?.affectedByGravity = false
+        enemy.physicsBody?.isDynamic = false
+        enemy.physicsBody?.pinned = true
+        enemy.physicsBody?.categoryBitMask = 4
+        enemy.physicsBody?.contactTestBitMask = 2
         
         addChild(enemy)
         enemyMove(enemy: enemy)
@@ -76,7 +99,7 @@ class GameScene: SKScene {
     }
     
     func enemyMove(enemy : SKSpriteNode) {
-        let move : SKAction = SKAction.move(to: CGPoint(x: Int.random(in: 0...Int(frame.width)), y: Int.random(in: 0...Int(frame.height))), duration: 1)
+        let move : SKAction = SKAction.move(to: CGPoint(x: player.position.x, y: player.position.y), duration: 1)
         let repeatAction : SKAction = SKAction.repeatForever(move)
         enemy.run(repeatAction)
     }
