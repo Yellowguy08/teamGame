@@ -8,7 +8,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
     
-    var player : SKSpriteNode = SKSpriteNode()
     var levelBar : SKSpriteNode = SKSpriteNode()
     var levelLabel : SKLabelNode = SKLabelNode()
     
