@@ -14,7 +14,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
+    
     var player : SKSpriteNode = SKSpriteNode()
+    var levelBar : SKSpriteNode = SKSpriteNode()
+    var levelLabel : SKLabelNode = SKLabelNode()
+    
+    var xp : Double = 0
+    var level : Int = 1
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -22,7 +28,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
+        
         player = childNode(withName: "Player") as! SKSpriteNode
+        
+        levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
+        levelBar.color = .green
+        
+        levelLabel = childNode(withName: "Level") as! SKLabelNode
+        levelLabel.text = "Level: \(level)"
         
         let border = SKPhysicsBody(edgeLoopFrom: self.frame)
         self.physicsBody = border
@@ -46,6 +59,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let location = touch.location(in: self)
             joystickBall.position = location
             createEnemy()
+            xp += 100 - (Double(level) * 0.1)
         }
     }//end touches began
     
@@ -65,6 +79,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }//end touches ended
     
     override func update(_ currentTime: TimeInterval) {
+        if (xp > 1000) {
+            xp = 1000
+        }
+        levelBar.size.width = xp/1000 * 600
+        
+        if (xp == 1000) {
+            level += 1
+            levelLabel.text = "Level: \(level)"
+            xp = 0
+        }
         
     }//end update
 
