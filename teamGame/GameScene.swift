@@ -71,8 +71,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        let deltaTime = CGFloat(currentTime)
-        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
+       // let dTime = CGFloat(currentTime)
+        let movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
