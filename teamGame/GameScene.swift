@@ -9,6 +9,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
     var player: SKSpriteNode!
     var movementDirection: CGPoint = .zero
+    let movementSpeed: CGFloat = 200.0
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -66,10 +67,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         joystickBall.position = CGPoint(x: frame.midX, y: frame.midY - 500)
+        movementDirection = .zero
     }
     
     override func update(_ currentTime: TimeInterval) {
-        print(movementDirection)
+        let deltaTime = CGFloat(currentTime)
+        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
+
+        player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
+        
+        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
+        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
     }
     
     func createEnemy() {
