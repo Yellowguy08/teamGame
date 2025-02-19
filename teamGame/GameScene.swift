@@ -35,6 +35,10 @@ class GameScene: SKScene {
         if let touch = touches.first {
             let location = touch.location(in: self)
             joystickBall.position = location
+            
+            let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+//            let angle =
+            
         }
     }//end touches moved
     
