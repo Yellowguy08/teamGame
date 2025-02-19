@@ -143,7 +143,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         let deltaTime = CGFloat(currentTime)
-        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
+//        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
