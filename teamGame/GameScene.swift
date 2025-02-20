@@ -19,7 +19,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
     
-    
+    var CharacterDirection: String = "Right"
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -155,6 +155,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
         player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
+        
+        
+        if movementDirection.x > 0 {
+            CharacterDirection = "Left"
+        } else {
+            CharacterDirection = "Right"
+        }
+        
+        if CharacterDirection == "Left" {
+            player.xScale = 0.2
+        } else {
+            player.xScale = -0.2
+        }
+        
     }
     
     func createEnemy() {
