@@ -2,7 +2,7 @@ import Foundation
 import SpriteKit
 import GameplayKit
 import GameController
-
+//
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
@@ -18,8 +18,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
-    
-    var CharacterDirection: String = "Right"
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -158,17 +156,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         
         if movementDirection.x > 0 {
-            CharacterDirection = "Left"
-        } else {
-            CharacterDirection = "Right"
-        }
-        
-        if CharacterDirection == "Left" {
             player.xScale = 0.2
         } else {
             player.xScale = -0.2
         }
-        
+
     }
     
     func createEnemy() {
