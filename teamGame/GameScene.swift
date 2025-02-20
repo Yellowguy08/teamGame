@@ -157,10 +157,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if movementDirection.x > 0 {
             player.xScale = 0.2
-        } else {
+            
+            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")           
+            }
+            
+        } else if movementDirection.x < 0 {
             player.xScale = -0.2
+            
+            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")
+            }
+            
+        } else {
+            player.xScale = 0.25
+            
+            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+                playerNode.texture = SKTexture(imageNamed: "PlayerSpriteForward")
+            }
         }
-
+        
+       
+        
     }
     
     func createEnemy() {
