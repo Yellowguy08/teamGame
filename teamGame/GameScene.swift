@@ -28,10 +28,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
         
-        if let playerNode = childNode(withName: "Player") as? SKSpriteNode {
+        if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
             player = playerNode
         } else {
-            player = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
+            player = SKSpriteNode(imageNamed: "PlayerSprite")
             player.position = CGPoint(x: frame.midX, y: frame.midY)
             player.name = "Player"
             player.physicsBody = SKPhysicsBody(rectangleOf: player.size)
@@ -64,8 +64,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             print(health)
             if health == 0 {
                 contact.bodyA.node?.removeFromParent()
-
-
             }
         }
     }
@@ -82,17 +80,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 startedClickInCircle = false
             }
             xp += 100 - (Double(level) * 0.1)
+            
+            if startedClickInCircle == true {
+                let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+            }
         }
-    }
+    }//end touchesbegan
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         updateJoystickBallPosition(touches: touches)
         if let touch = touches.first {
             let location = touch.location(in: self)
-            joystickBall.position = location
             
-            let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
-            movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+            if startedClickInCircle == true {
+                let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+            }
+            
+           
         }
     }
     
