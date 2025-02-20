@@ -7,9 +7,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
+    
+    var levelBar : SKSpriteNode = SKSpriteNode()
+    var levelLabel : SKLabelNode = SKLabelNode()
+    
+    var xp : Double = 0
+    var level : Int = 1
     var player: SKSpriteNode!
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
+    var health: CGFloat = 100
+    
+    
     
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
@@ -32,6 +41,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             addChild(player)
         }
         
+       // levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
+        levelBar.color = .green
+        
+        levelLabel = childNode(withName: "Level") as! SKLabelNode
+        levelLabel.text = "Level: \(level)"
+        
         let border = SKPhysicsBody(edgeLoopFrom: self.frame)
         self.physicsBody = border
         self.physicsBody?.categoryBitMask = 8
@@ -42,8 +57,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     func didBegin(_ contact: SKPhysicsContact) {
         if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
-            contact.bodyA.node?.removeFromParent()
             contact.bodyB.node?.removeFromParent()
+            health = health - 10
+            let waitAction = SKAction.wait(forDuration: 2.0)
+            print(health)
+            if health == 0 {
+                contact.bodyA.node?.removeFromParent()
+
+
+            }
         }
     }
     
@@ -52,6 +74,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let location = touch.location(in: self)
             joystickBall.position = location
             createEnemy()
+            xp += 100 - (Double(level) * 0.1)
         }
     }
     
@@ -71,8 +94,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        let deltaTime = CGFloat(currentTime)
-        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
+       // let dTime = CGFloat(currentTime)
+        let movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
+      
+        if (xp > 1000) {
+            xp = 1000
+        }
+        levelBar.size.width = xp/1000 * 600
+        
+        if (xp == 1000) {
+            level += 1
+            levelLabel.text = "Level: \(level)"
+            xp = 0
+        }
+        
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
