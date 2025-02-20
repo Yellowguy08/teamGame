@@ -2,7 +2,7 @@ import Foundation
 import SpriteKit
 import GameplayKit
 import GameController
-
+//
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
@@ -18,7 +18,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
-        
+    
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
         addChild(joystickBall)
@@ -160,8 +160,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         } else {
             player.xScale = -0.2
         }
-        
-        
+
     }
     
     func createEnemy() {
