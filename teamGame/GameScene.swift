@@ -18,9 +18,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
-    
-    
-    
+        
     override func didMove(to view: SKView) {
         addChild(joystickContainer)
         addChild(joystickBall)
@@ -155,6 +153,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
         player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
+        
+        
+        if movementDirection.x > 0 {
+            player.xScale = 0.2
+        } else {
+            player.xScale = -0.2
+        }
+        
+        
     }
     
     func createEnemy() {
