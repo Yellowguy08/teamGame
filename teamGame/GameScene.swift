@@ -141,6 +141,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelBar.size.width = xp/1000 * 600
         
         if (xp == 1000) {
+            levelUp()
             level += 1
             levelLabel.text = "Level: \(level)"
             xp = 0
@@ -231,6 +232,63 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
         enemy.run(SKAction.repeatForever(sequence))
         
+        
+    }
+    
+    func levelUp() {
+        rainbowXP()
+        viewUpgrades()
+//        pause()
+    }
+    
+    func rainbowXP() {
+        let wait : SKAction = SKAction.wait(forDuration: 0.3)
+        
+        let red : SKAction = SKAction.run {
+            self.levelBar.color = .red
+        }
+        
+        let orange : SKAction = SKAction.run {
+            self.levelBar.color = .orange
+        }
+        
+        let yellow : SKAction = SKAction.run {
+            self.levelBar.color = .yellow
+        }
+        
+        let green : SKAction = SKAction.run {
+            self.levelBar.color = .green
+        }
+        
+        let blue : SKAction = SKAction.run {
+            self.levelBar.color = .blue
+        }
+        
+        let pink : SKAction = SKAction.run {
+            self.levelBar.color = .magenta
+        }
+        
+        let sequence : SKAction = SKAction.sequence([red, wait, orange, wait, yellow, wait, green, wait, blue, wait, pink, wait])
+        
+        let rpeat : SKAction = SKAction.repeatForever(sequence)
+        
+        levelBar.run(rpeat)
+        
+    }
+    
+    func viewUpgrades() {
+        
+        let option1 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        let option2 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        let option3 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        
+        addChild(option1)
+        addChild(option2)
+        addChild(option3)
+        
+        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
+        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
+        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
         
     }
 }
