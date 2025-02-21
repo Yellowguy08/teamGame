@@ -46,12 +46,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLabel = childNode(withName: "Level") as! SKLabelNode
         levelLabel.text = "Level: \(level)"
         
-        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
-        self.physicsBody = border
-        self.physicsBody?.categoryBitMask = 8
-        self.physicsBody?.contactTestBitMask = 2
-        
-        physicsWorld.contactDelegate = self
+//        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
+//        self.physicsBody = border
+//        self.physicsBody?.categoryBitMask = 8
+//        self.physicsBody?.contactTestBitMask = 2
+//        
+//        physicsWorld.contactDelegate = self
     }
 
     func didBegin(_ contact: SKPhysicsContact) {
@@ -199,20 +199,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.position = CGPoint(x: x, y: y)
         enemy.physicsBody = SKPhysicsBody(rectangleOf: enemy.frame.size)
         enemy.physicsBody?.affectedByGravity = false
-        enemy.physicsBody?.isDynamic = false
+        enemy.physicsBody?.isDynamic = true
         enemy.physicsBody?.categoryBitMask = 4
         enemy.physicsBody?.contactTestBitMask = 2
+        enemy.physicsBody?.allowsRotation = false
         
         addChild(enemy)
+                
         enemyMove(enemy: enemy)
         
 
     }
     
     func enemyMove(enemy: SKSpriteNode) {
-        let move: SKAction = SKAction.move(to: player.position, duration: 1)
-        let repeatAction: SKAction = SKAction.repeatForever(move)
-        enemy.run(repeatAction)
-
+        
+        let move : SKAction = SKAction.run {
+            let angle = CGFloat.pi + atan2(enemy.position.y - self.player.position.y,
+                                           enemy.position.x - self.player.position.x)
+                        
+            let velocityX = 250 * cos(angle)
+            let velocityY = 250 * sin(angle)
+                                  
+            let newVelocity = CGVector(dx: velocityX, dy: velocityY)
+                        
+            enemy.physicsBody?.velocity = newVelocity
+        }
+        
+        let wait : SKAction = SKAction.wait(forDuration: Double.random(in: 0.1 ..< 0.5))
+        
+        let sequence : SKAction = SKAction.sequence([move, wait])
+                
+        enemy.run(SKAction.repeatForever(sequence))
+        
+        
     }
 }
