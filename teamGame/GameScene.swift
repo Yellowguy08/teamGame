@@ -5,6 +5,8 @@ import GameController
 //
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
+    let upgrades : [String] = ["WeaponSpeed", "Damage", "MovementSpeed", "Spread"]
+    
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
     let shotgun = SKSpriteNode(imageNamed: "Shotgun")
@@ -17,17 +19,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var xp : Double = 0
     var level : Int = 1
     var player: SKSpriteNode!
+    var worldNode : SKNode!
     
     
     var movementDirection: CGPoint = .zero
-    let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
+    var upgradeOptions : [SKSpriteNode] = []
+    
+    var selectUpgrade : Bool = false
+    
+    // Upgrades
+    var weaponSpeed : Double = 5.00
+    var weaponDamage : Double = 10.00
+    var movementSpeed : CGFloat = 200.0
+    var spread : Int = 1
+    
+    var enemies : [SKSpriteNode] = []
     
     
     
     override func didMove(to view: SKView) {
-        addChild(joystickContainer)
-        addChild(joystickBall)
+        upgradeOptions = []
+        worldNode = childNode(withName: "worldNode")
+        
+        worldNode.addChild(joystickContainer)
+        worldNode.addChild(joystickBall)
+        
+        joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
+        joystickBall.position = joystickContainer.position
+              
         addChild(shotgun)
 
         shotgun.size = CGSize(width: 105, height: 105)
@@ -35,7 +55,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         joystickBall.position = joystickContainer.position
         shotgun.position = CGPoint(x: frame.midX, y: frame.midY)
 
-        if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+        if let playerNode = worldNode.childNode(withName: "PlayerSprite") as? SKSpriteNode {
             player = playerNode
         } else {
             player = SKSpriteNode(imageNamed: "PlayerSprite")
@@ -46,7 +66,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.physicsBody?.isDynamic = true
             player.physicsBody?.categoryBitMask = 2
             player.physicsBody?.contactTestBitMask = 4
-            addChild(player)
+            worldNode.addChild(player)
         }
         
         levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
@@ -78,36 +98,48 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+       
         for touch in touches {
+            
             let location = touch.location(in: self)
-            createEnemy()
-            
-            if (CGRectContainsPoint(joystickContainer.frame, location)) {
-                startedClickInCircle = true
-                joystickBall.position = location
+            if (!worldNode.isPaused) {
+                createEnemy()
+                
+                if (CGRectContainsPoint(joystickContainer.frame, location)) {
+                    startedClickInCircle = true
+                    joystickBall.position = location
+                } else {
+                    startedClickInCircle = false
+                }
+                xp += 100 - (Double(level) * 0.1)
+                
+                if startedClickInCircle == true {
+                    let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                    movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+                }
             } else {
-                startedClickInCircle = false
-            }
-            xp += 100 - (Double(level) * 0.1)
-            
-            if startedClickInCircle == true {
-                let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
-                movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+                for upgradeOption in upgradeOptions {
+                    if (CGRectContainsPoint(upgradeOption.frame, location)) {
+                        selectUpgrade = true
+                    }
+                }
             }
         }
     }//end touchesbegan
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        updateJoystickBallPosition(touches: touches)
-        if let touch = touches.first {
-            let location = touch.location(in: self)
-            
-            if startedClickInCircle == true {
-                let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
-                movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+        if (!worldNode.isPaused) {
+            updateJoystickBallPosition(touches: touches)
+            if let touch = touches.first {
+                let location = touch.location(in: self)
+                
+                if startedClickInCircle == true {
+                    let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                    movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
+                }
+                
+                
             }
-            
-           
         }
     }
     
@@ -137,9 +169,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        joystickBall.position = CGPoint(x: frame.midX, y: frame.midY - 500)
-        startedClickInCircle = false
-        movementDirection = .zero
+        resetJoyStick()
+        if let touch = touches.first {
+            let location = touch.location(in: self)
+            if (worldNode.isPaused) {
+                for upgradeOption in upgradeOptions {
+                    if (selectUpgrade && CGRectContainsPoint(upgradeOption.frame, location)) {
+                        selectUpgrade = false
+                        upgrade(upgradeName: (upgradeOption.childNode(withName: "label") as! SKLabelNode).text!)
+                        
+                        level += 1
+                        levelLabel.text = "Level: \(level)"
+                        xp = 0
+                        worldNode.isPaused = false
+                        physicsWorld.speed = 1
+                        levelBar.removeAllActions()
+                        levelBar.color = .green
+                                                
+                        for upgradeOption in upgradeOptions {
+                            upgradeOption.removeFromParent()
+                        }
+                        
+                        upgradeOptions = []
+                        break
+                    }
+                }
+            }
+        }
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -152,10 +208,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         levelBar.size.width = xp/1000 * 600
         
-        if (xp == 1000) {
-            level += 1
-            levelLabel.text = "Level: \(level)"
-            xp = 0
+        if (xp == 1000 && !worldNode.isPaused) {
+            levelUp()
         }
         
         let deltaTime = CGFloat(currentTime)
@@ -170,21 +224,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if movementDirection.x > 0 {
             player.xScale = 0.2
             
-            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
-                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")           
+            if let playerNode = worldNode.childNode(withName: "PlayerSprite") as? SKSpriteNode {
+                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")
             }
             
         } else if movementDirection.x < 0 {
             player.xScale = -0.2
             
-            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+            if let playerNode = worldNode.childNode(withName: "PlayerSprite") as? SKSpriteNode {
                 playerNode.texture = SKTexture(imageNamed: "PlayerSprite")
             }
             
         } else {
             player.xScale = 0.25
             
-            if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
+            if let playerNode = worldNode.childNode(withName: "PlayerSprite") as? SKSpriteNode {
                 playerNode.texture = SKTexture(imageNamed: "PlayerSpriteForward")
             }
         }
@@ -218,11 +272,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.contactTestBitMask = 2
         enemy.physicsBody?.allowsRotation = false
         
-        addChild(enemy)
+        worldNode.addChild(enemy)
+        enemies.append(enemy)
                 
         enemyMove(enemy: enemy)
         
 
+    }
+    
+    func upgrade(upgradeName : String) {
+        switch (upgradeName) {
+        case "WeaponSpeed":
+            weaponSpeed += 1.00
+            print(weaponSpeed)
+            return
+        case "Damage":
+            weaponDamage += 2.00
+            print(weaponDamage)
+            return
+        case "Spread":
+            spread += 1
+            print(spread)
+            return
+        case "MovementSpeed":
+            movementSpeed += 25.00
+            print(movementSpeed)
+            return
+        default:
+            return
+        }
     }
     
     func enemyMove(enemy: SKSpriteNode) {
@@ -245,6 +323,90 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
         enemy.run(SKAction.repeatForever(sequence))
         
+        
+    }
+    
+    func levelUp() {
+        worldNode.isPaused = true
+        physicsWorld.speed = 0
+        resetJoyStick()
+        rainbowXP()
+        viewUpgrades()
+    }
+    
+    func resetJoyStick() {
+        startedClickInCircle = false
+        joystickBall.position = joystickContainer.position
+        movementDirection = .zero
+    }
+    
+    func rainbowXP() {
+        let wait : SKAction = SKAction.wait(forDuration: 0.3)
+        
+        let red : SKAction = SKAction.run {
+            self.levelBar.color = .red
+        }
+        
+        let orange : SKAction = SKAction.run {
+            self.levelBar.color = .orange
+        }
+        
+        let yellow : SKAction = SKAction.run {
+            self.levelBar.color = .yellow
+        }
+        
+        let green : SKAction = SKAction.run {
+            self.levelBar.color = .green
+        }
+        
+        let blue : SKAction = SKAction.run {
+            self.levelBar.color = .blue
+        }
+        
+        let pink : SKAction = SKAction.run {
+            self.levelBar.color = .magenta
+        }
+        
+        let sequence : SKAction = SKAction.sequence([orange, wait, green, wait, blue, wait, red, wait, yellow, wait, pink, wait])
+        
+        let rpeat : SKAction = SKAction.repeatForever(sequence)
+        
+        levelBar.run(rpeat)
+        
+    }
+    
+    func viewUpgrades() {
+                
+        var upgrades = self.upgrades
+        
+        let option1 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        let option2 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        let option3 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
+        
+        addChild(option1)
+        upgradeOptions.append(option1)
+        addChild(option2)
+        upgradeOptions.append(option2)
+        addChild(option3)
+        upgradeOptions.append(option3)
+        
+        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
+        option1.zPosition = 10
+        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
+        option2.zPosition = 10
+        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
+        option3.zPosition = 10
+        
+        for i in 0..<3 {
+            let randomNum = Int.random(in: 0..<upgrades.count)
+            let label : SKLabelNode = SKLabelNode(text: upgrades[randomNum])
+            upgrades.remove(at: randomNum)
+            upgradeOptions[i].addChild(label)
+//            print(label.text)
+            label.fontColor = .black
+            label.name = "label"
+            label.zPosition = 11
+        }
         
     }
 }
