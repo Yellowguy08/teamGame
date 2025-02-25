@@ -19,13 +19,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var player: SKSpriteNode!
     var worldNode : SKNode!
     var movementDirection: CGPoint = .zero
-    let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
     var upgradeOptions : [SKSpriteNode] = []
+    
+    var selectUpgrade : Bool = false
+    
+    // Upgrades
+    var weaponSpeed : Double = 5.00
+    var weaponDamage : Double = 10.00
+    var movementSpeed : CGFloat = 200.0
+    var spread : Int = 1
     
     var enemies : [SKSpriteNode] = []
     
     override func didMove(to view: SKView) {
+        upgradeOptions = []
         worldNode = childNode(withName: "worldNode")
         
         worldNode.addChild(joystickContainer)
@@ -94,6 +102,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
                     movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
                 }
+            } else {
+                for upgradeOption in upgradeOptions {
+                    if (CGRectContainsPoint(upgradeOption.frame, location)) {
+                        selectUpgrade = true
+                    }
+                }
             }
         }
     }//end touchesbegan
@@ -143,11 +157,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         resetJoyStick()
         if let touch = touches.first {
             let location = touch.location(in: self)
-            
             if (worldNode.isPaused) {
                 for upgradeOption in upgradeOptions {
-                    if CGRectContainsPoint(upgradeOption.frame, location) {
-                        print((upgradeOption.childNode(withName: "label") as! SKLabelNode).text)
+                    if (selectUpgrade && CGRectContainsPoint(upgradeOption.frame, location)) {
+                        selectUpgrade = false
+                        upgrade(upgradeName: (upgradeOption.childNode(withName: "label") as! SKLabelNode).text!)
+                        
+                        level += 1
+                        levelLabel.text = "Level: \(level)"
+                        xp = 0
+                        worldNode.isPaused = false
+                        physicsWorld.speed = 1
+                        levelBar.removeAllActions()
+                        levelBar.color = .green
+                                                
+                        for upgradeOption in upgradeOptions {
+                            upgradeOption.removeFromParent()
+                        }
+                        
+                        upgradeOptions = []
+                        break
                     }
                 }
             }
@@ -163,11 +192,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         levelBar.size.width = xp/1000 * 600
         
-        if (xp == 1000) {
+        if (xp == 1000 && !worldNode.isPaused) {
             levelUp()
-            level += 1
-            levelLabel.text = "Level: \(level)"
-            xp = 0
         }
         
         let deltaTime = CGFloat(currentTime)
@@ -236,6 +262,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     }
     
+    func upgrade(upgradeName : String) {
+        switch (upgradeName) {
+        case "WeaponSpeed":
+            weaponSpeed += 1.00
+            print(weaponSpeed)
+            return
+        case "Damage":
+            weaponDamage += 2.00
+            print(weaponDamage)
+            return
+        case "Spread":
+            spread += 1
+            print(spread)
+            return
+        case "MovementSpeed":
+            movementSpeed += 25.00
+            print(movementSpeed)
+            return
+        default:
+            return
+        }
+    }
+    
     func enemyMove(enemy: SKSpriteNode) {
         
         let move : SKAction = SKAction.run {
@@ -300,7 +349,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.levelBar.color = .magenta
         }
         
-        let sequence : SKAction = SKAction.sequence([red, wait, orange, wait, yellow, wait, green, wait, blue, wait, pink, wait])
+        let sequence : SKAction = SKAction.sequence([orange, wait, green, wait, blue, wait, red, wait, yellow, wait, pink, wait])
         
         let rpeat : SKAction = SKAction.repeatForever(sequence)
         
@@ -309,7 +358,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func viewUpgrades() {
-        
+                
         var upgrades = self.upgrades
         
         let option1 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
@@ -333,8 +382,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for i in 0..<3 {
             let randomNum = Int.random(in: 0..<upgrades.count)
             let label : SKLabelNode = SKLabelNode(text: upgrades[randomNum])
-            upgrades .remove(at: randomNum)
+            upgrades.remove(at: randomNum)
             upgradeOptions[i].addChild(label)
+//            print(label.text)
             label.fontColor = .black
             label.name = "label"
             label.zPosition = 11
