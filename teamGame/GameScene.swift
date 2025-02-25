@@ -9,6 +9,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
+    let shotgun = SKSpriteNode(imageNamed: "Shotgun")
+
     var startedClickInCircle: Bool = false
     
     var levelBar : SKSpriteNode = SKSpriteNode()
@@ -18,6 +20,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var level : Int = 1
     var player: SKSpriteNode!
     var worldNode : SKNode!
+    
+    
     var movementDirection: CGPoint = .zero
     var health: CGFloat = 100
     var upgradeOptions : [SKSpriteNode] = []
@@ -32,6 +36,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var enemies : [SKSpriteNode] = []
     
+    
+    
     override func didMove(to view: SKView) {
         upgradeOptions = []
         worldNode = childNode(withName: "worldNode")
@@ -41,7 +47,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
-        
+              
+        addChild(shotgun)
+
+        shotgun.size = CGSize(width: 105, height: 105)
+        joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
+        joystickBall.position = joystickContainer.position
+        shotgun.position = CGPoint(x: frame.midX, y: frame.midY)
+
         if let playerNode = worldNode.childNode(withName: "PlayerSprite") as? SKSpriteNode {
             player = playerNode
         } else {
@@ -78,6 +91,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             print(health)
             if health == 0 {
                 contact.bodyA.node?.removeFromParent()
+
+
             }
         }
     }
@@ -185,6 +200,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func update(_ currentTime: TimeInterval) {
        // let dTime = CGFloat(currentTime)
+        
         let movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
       
         if (xp > 1000) {
@@ -228,7 +244,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
        
-        
+        shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
+        let angle = atan2(movement.dy, movement.dx)
+        shotgun.zRotation = angle
     }
     
     func createEnemy() {
