@@ -48,9 +48,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
               
-        addChild(shotgun)
+        worldNode.addChild(shotgun)
 
         shotgun.size = CGSize(width: 105, height: 105)
+        shotgun.zPosition = 5
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
         shotgun.position = CGPoint(x: frame.midX, y: frame.midY)
