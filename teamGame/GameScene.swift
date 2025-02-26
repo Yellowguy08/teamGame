@@ -245,6 +245,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
         enemy.run(SKAction.repeatForever(sequence))
         
-        
+        //hi
     }
 }
