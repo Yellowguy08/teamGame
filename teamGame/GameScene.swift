@@ -21,6 +21,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var player: SKSpriteNode!
     var worldNode : SKNode!
     
+    var movement : CGVector = CGVector(dx: 0, dy: 0)
+    var angle : CGFloat = 0
+    
     
     var movementDirection: CGPoint = .zero
     var health: CGFloat = 100
@@ -35,8 +38,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var spread : Int = 1
     
     var enemies : [SKSpriteNode] = []
-    
-    
     
     override func didMove(to view: SKView) {
         upgradeOptions = []
@@ -76,26 +77,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLabel = childNode(withName: "Level") as! SKLabelNode
         levelLabel.text = "Level: \(level)"
         
+        shoot()
+        
 //        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
 //        self.physicsBody = border
 //        self.physicsBody?.categoryBitMask = 8
 //        self.physicsBody?.contactTestBitMask = 2
 //        
-//        physicsWorld.contactDelegate = self
+        physicsWorld.contactDelegate = self
     }
 
     func didBegin(_ contact: SKPhysicsContact) {
-        if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
+                
+        if ((contact.bodyA.categoryBitMask == 4 && contact.bodyB.categoryBitMask == 8) || (contact.bodyA.categoryBitMask == 8 && contact.bodyB.categoryBitMask == 4)) {
+            contact.bodyA.node?.removeFromParent()
             contact.bodyB.node?.removeFromParent()
-            health = health - 10
-            let waitAction = SKAction.wait(forDuration: 2.0)
-            print(health)
-            if health == 0 {
-                contact.bodyA.node?.removeFromParent()
-
-
-            }
+            xp += 100 - (Double(level) * 0.1)
         }
+        
+//        if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
+//            contact.bodyB.node?.removeFromParent()
+//            health = health - 10
+//            let waitAction = SKAction.wait(forDuration: 2.0)
+//            print(health)
+//            if health == 0 {
+//                contact.bodyA.node?.removeFromParent()
+//            }
+//        }
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -112,7 +120,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 } else {
                     startedClickInCircle = false
                 }
-                xp += 100 - (Double(level) * 0.1)
                 
                 if startedClickInCircle == true {
                     let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
@@ -202,7 +209,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
        // let dTime = CGFloat(currentTime)
         
-        let movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
+        movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
       
         if (xp > 1000) {
             xp = 1000
@@ -246,12 +253,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
        
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
-        let angle = atan2(movement.dy, movement.dx)
+        angle = atan2(movement.dy, movement.dx)
         shotgun.zRotation = angle
+        
     }
     
     func createEnemy() {
-        let enemy: SKSpriteNode = SKSpriteNode(color: .red, size: CGSize(width: 100, height: 100))
+        let enemy: SKSpriteNode = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 75))
         let priority = Int.random(in: 0...1)
         
         var x: Int
@@ -270,7 +278,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.affectedByGravity = false
         enemy.physicsBody?.isDynamic = true
         enemy.physicsBody?.categoryBitMask = 4
-        enemy.physicsBody?.contactTestBitMask = 2
+        enemy.physicsBody?.contactTestBitMask = 2 | 8
         enemy.physicsBody?.allowsRotation = false
         
         worldNode.addChild(enemy)
@@ -279,6 +287,34 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemyMove(enemy: enemy)
         
 
+    }
+    
+    func createBullet() {
+        let bullet : SKSpriteNode = SKSpriteNode(color: .orange, size: CGSize(width: 20, height: 20))
+        
+        bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.frame.size)
+        bullet.physicsBody?.affectedByGravity = false
+        bullet.physicsBody?.isDynamic = true
+        bullet.physicsBody?.categoryBitMask = 8
+        bullet.physicsBody?.contactTestBitMask = 4
+        bullet.physicsBody?.allowsRotation = false
+        
+        bullet.position = shotgun.position
+        
+        var force : CGVector = CGVector(dx: 0, dy: 0)
+        
+        force.dx = cos(angle)
+        force.dy = sin(angle)
+        
+        print("Angle: \(angle)")
+        
+        force.dx *= movementSpeed * 2
+        force.dy *= movementSpeed * 2
+        
+        worldNode.addChild(bullet)
+                
+        bullet.physicsBody?.applyForce(force)
+        
     }
     
     func upgrade(upgradeName : String) {
@@ -409,5 +445,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             label.zPosition = 11
         }
         
+    }
+    
+    func shoot() {
+        let shootAction : SKAction = SKAction.run {
+            self.createBullet()
+        }
+        
+        let wait : SKAction = SKAction.wait(forDuration: 3/weaponSpeed)
+        
+        let shootSequence : SKAction = SKAction.sequence([wait, shootAction])
+        
+        worldNode.run(SKAction.repeatForever(shootSequence))
     }
 }
