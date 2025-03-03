@@ -14,6 +14,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var levelBar : SKSpriteNode = SKSpriteNode()
     var levelLabel : SKLabelNode = SKLabelNode()
     
+    var healthBarBackground: SKSpriteNode!
+    var healthBar: SKSpriteNode!
+    
     var xp : Double = 0
     var level : Int = 1
     var player: SKSpriteNode!
@@ -21,8 +24,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
-    var health: CGFloat = 100
-    
+    var health: CGFloat = 50
     
     
     override func didMove(to view: SKView) {
@@ -49,6 +51,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             addChild(player)
         }
         
+        healthBarBackground = SKSpriteNode(color: .darkGray, size: CGSize(width: 100, height: 10))
+        healthBarBackground.zPosition = 2
+        addChild(healthBarBackground)
+
+        healthBar = SKSpriteNode(color: .green, size: CGSize(width: 100, height: 10))
+        healthBar.anchorPoint = CGPoint(x: 0, y: 0.5)
+        healthBar.position = CGPoint(x: -50, y: 0)
+        healthBarBackground.addChild(healthBar)
+
+        
         levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
         levelBar.color = .green
         
@@ -60,22 +72,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 //        self.physicsBody?.categoryBitMask = 8
 //        self.physicsBody?.contactTestBitMask = 2
 //        
-//        physicsWorld.contactDelegate = self
+        physicsWorld.contactDelegate = self
     }
-
     func didBegin(_ contact: SKPhysicsContact) {
         if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
-            contact.bodyB.node?.removeFromParent()
-            health = health - 10
-            let waitAction = SKAction.wait(forDuration: 2.0)
-            print(health)
-            if health == 0 {
+            health -= 10
+            print("Health: \(health)")
+            
+            updateHealthBar()
+
+            if contact.bodyA.categoryBitMask == 4 {
                 contact.bodyA.node?.removeFromParent()
+            } else {
+                contact.bodyB.node?.removeFromParent()
+            }
 
-
+            if health <= 0 {
+                player.removeFromParent()
+                healthBarBackground.removeFromParent()
+                print("Game Over")
             }
         }
+
     }
+
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
@@ -109,8 +129,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
            
         }
-    }
+    } //updates joystick
     
+    func updateHealthBar() {
+        let healthPercentage = max(health / 100, 0)
+        healthBar.size.width = 100 * healthPercentage
+
+        healthBar.position.x = -50
+
+        if healthPercentage > 0.5 {
+            healthBar.color = .green
+        } else if healthPercentage > 0.2 {
+            healthBar.color = .yellow
+        } else {
+            healthBar.color = .red
+        }
+        print("Updated Health Bar Width: \(healthBar.size.width)")
+    }
+
+
+
+
     func updateJoystickBallPosition(touches: Set<UITouch>) {
         if startedClickInCircle == true {
             if let touch = touches.first {
@@ -119,7 +158,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
                 let angle = atan2(v.dy, v.dx)
                 
-                let deg = angle * CGFloat(180/Double.pi)
+                _ = angle * CGFloat(180/Double.pi)
                 
                 let length:CGFloat = joystickContainer.frame.height/2
                 
@@ -144,9 +183,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func update(_ currentTime: TimeInterval) {
        // let dTime = CGFloat(currentTime)
-        
+
         let movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
-      
+
         if (xp > 1000) {
             xp = 1000
         }
@@ -158,7 +197,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             xp = 0
         }
         
-        let deltaTime = CGFloat(currentTime)
+        _ = CGFloat(currentTime)
 //        let movement = CGVector(dx: movementDirection.x * movementSpeed, dy: movementDirection.y * movementSpeed)
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
@@ -166,6 +205,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
         player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
         
+        
+       
         
         if movementDirection.x > 0 {
             player.xScale = 0.2
@@ -189,10 +230,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-       
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
         let angle = atan2(movement.dy, movement.dx)
         shotgun.zRotation = angle
+        
+        healthBarBackground.position = CGPoint(x: player.position.x, y: player.position.y - player.size.height / 2 - 15)
+
+        
+        updateHealthBar()
+
     }
     
     func createEnemy() {
