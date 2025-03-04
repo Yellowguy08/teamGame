@@ -5,26 +5,30 @@ import GameController
 //
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
+    let cam = SKCameraNode()
+    
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
     var startedClickInCircle: Bool = false
-    
+        
     var levelBar : SKSpriteNode = SKSpriteNode()
     var levelLabel : SKLabelNode = SKLabelNode()
     
+    
     var xp : Double = 0
     var level : Int = 1
-    var player: SKSpriteNode!
+    var player: SKSpriteNode = SKSpriteNode()
+        
     var movementDirection: CGPoint = .zero
     let movementSpeed: CGFloat = 200.0
     var health: CGFloat = 100
     
+    var globalTouchLocation: CGPoint = .zero
+    
+    
     override func didMove(to view: SKView) {
-        addChild(joystickContainer)
-        addChild(joystickBall)
-        
-        joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
-        joystickBall.position = joystickContainer.position
+        addChild(cam)
+        self.camera = cam //COMMENT THIS OUT TO TURN CAMERA OFF
         
         if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
             player = playerNode
@@ -37,8 +41,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.physicsBody?.isDynamic = true
             player.physicsBody?.categoryBitMask = 2
             player.physicsBody?.contactTestBitMask = 4
-            addChild(player)
+            player.addChild(player)
         }
+
+        joystickContainer.position = CGPoint(x: player.position.x, y: player.position.y - 500)
+        addChild(joystickContainer)
+        
+        joystickBall.position = joystickContainer.position
+        addChild(joystickBall)
         
         levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
         levelBar.color = .green
@@ -46,10 +56,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLabel = childNode(withName: "Level") as! SKLabelNode
         levelLabel.text = "Level: \(level)"
         
-        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
-        self.physicsBody = border
-        self.physicsBody?.categoryBitMask = 8
-        self.physicsBody?.contactTestBitMask = 2
+//        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
+//        self.physicsBody = border
+//        self.physicsBody?.categoryBitMask = 8
+//        self.physicsBody?.contactTestBitMask = 2
         
         physicsWorld.contactDelegate = self
     }
@@ -69,11 +79,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
+            globalTouchLocation = location
+//            let location2 = touch.location(in: player)
+                        
             createEnemy()
-            
+
             if (CGRectContainsPoint(joystickContainer.frame, location)) {
                 startedClickInCircle = true
-                joystickBall.position = location
+                updateJoystickBallPosition()
             } else {
                 startedClickInCircle = false
             }
@@ -87,46 +100,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }//end touchesbegan
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        updateJoystickBallPosition(touches: touches)
         if let touch = touches.first {
             let location = touch.location(in: self)
-            
+            globalTouchLocation = location
+            updateJoystickBallPosition()
+
             if startedClickInCircle == true {
                 let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
                 movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
             }
-            
-           
         }
     }
     
-    func updateJoystickBallPosition(touches: Set<UITouch>) {
+    func updateJoystickBallPosition() {
         if startedClickInCircle == true {
-            if let touch = touches.first {
-                let location = touch.location(in: self)
-                
-                let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
-                let angle = atan2(v.dy, v.dx)
-                
-                let deg = angle * CGFloat(180/Double.pi)
-                
-                let length:CGFloat = joystickContainer.frame.height/2
-                
-                let xDistance:CGFloat = sin(angle - 1.57079633) * length
-                let yDistance:CGFloat = cos(angle - 1.57079633) * length
-                
-                if (CGRectContainsPoint(joystickContainer.frame, location)) {
-                    joystickBall.position = location
-                } else {
-                    joystickBall.position = CGPointMake(joystickContainer.position.x - xDistance, joystickContainer.position.y + yDistance)
-                }
-                
+            let location = globalTouchLocation
+            let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+            let angle = atan2(v.dy, v.dx)
+            
+//                let deg = angle * CGFloat(180/Double.pi)
+            
+            let length:CGFloat = joystickContainer.frame.height/2
+            
+            let xDistance:CGFloat = sin(angle - 1.57079633) * length
+            let yDistance:CGFloat = cos(angle - 1.57079633) * length
+            
+            if (CGRectContainsPoint(joystickContainer.frame, location)) {
+                joystickBall.position = location
+            } else {
+                joystickBall.position = CGPointMake(joystickContainer.position.x - xDistance, joystickContainer.position.y + yDistance)
             }
+            
         }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        joystickBall.position = CGPoint(x: frame.midX, y: frame.midY - 500)
+        joystickBall.position = joystickContainer.position
         startedClickInCircle = false
         movementDirection = .zero
     }
@@ -159,7 +168,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.xScale = 0.2
             
             if let playerNode = childNode(withName: "PlayerSprite") as? SKSpriteNode {
-                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")           
+                playerNode.texture = SKTexture(imageNamed: "PlayerSprite")
             }
             
         } else if movementDirection.x < 0 {
@@ -178,8 +187,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
        
+        cam.position = player.position
         
-    }
+        let xDistance = joystickBall.position.x - joystickContainer.position.x
+        let yDistance = joystickBall.position.y - joystickContainer.position.y
+        
+        joystickContainer.position = CGPoint(x: player.position.x, y: player.position.y - 500)
+        joystickBall.position = CGPoint(x: joystickContainer.position.x + xDistance, y: joystickContainer.position.y + yDistance)
+        
+    }//end update
     
     func createEnemy() {
         let enemy: SKSpriteNode = SKSpriteNode(color: .red, size: CGSize(width: 100, height: 100))
@@ -205,8 +221,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         addChild(enemy)
         enemyMove(enemy: enemy)
-        
-
     }
     
     func enemyMove(enemy: SKSpriteNode) {
