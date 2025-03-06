@@ -53,6 +53,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         worldNode.addChild(joystickContainer)
         worldNode.addChild(joystickBall)
+        joystickContainer.zPosition = 3
+        joystickBall.zPosition = 3
         
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
@@ -76,6 +78,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.physicsBody?.isDynamic = true
             player.physicsBody?.categoryBitMask = 2
             player.physicsBody?.contactTestBitMask = 4
+            player.zPosition = 3
             worldNode.addChild(player)
         }
         
@@ -96,17 +99,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLabel.text = "Level: \(level)"
         
         shoot()
-        
-//        let border = SKPhysicsBody(edgeLoopFrom: self.frame)
-//        self.physicsBody = border
-//        self.physicsBody?.categoryBitMask = 8
-//        self.physicsBody?.contactTestBitMask = 2
-//
+
         physicsWorld.contactDelegate = self
     }
     func didBegin(_ contact: SKPhysicsContact) {
         if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
-            health -= 10
+            health -= 5
             print("Health: \(health)")
             
             updateHealthBar()
@@ -283,8 +281,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
-        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
-        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
+//        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
+//        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
         
         
        
@@ -351,6 +349,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.categoryBitMask = 4
         enemy.physicsBody?.contactTestBitMask = 2 | 8
         enemy.physicsBody?.allowsRotation = false
+        enemy.zPosition = 3
         
         worldNode.addChild(enemy)
         enemies.append(enemy)
@@ -369,6 +368,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.categoryBitMask = 8
         bullet.physicsBody?.contactTestBitMask = 4
         bullet.physicsBody?.allowsRotation = false
+        bullet.zPosition = 3
         
         bullet.position = shotgun.position
         
