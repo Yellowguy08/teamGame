@@ -45,7 +45,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Upgrades
     var weaponSpeed : Double = 5.00
     var weaponDamage : Double = 10.00
-    var movementSpeed : CGFloat = 150.0
+    var movementSpeed : CGFloat = 20.0
     var spread : Int = 1
     
     var enemies : [SKSpriteNode] = []
@@ -128,6 +128,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if (bodyA.categoryBitMask == 2 && bodyB.categoryBitMask == 4) || (bodyA.categoryBitMask == 4 && bodyB.categoryBitMask == 2) {
             
             print("Player-Enemy Contact Detected")
+
             health -= 5
             print("Health: \(health)")
             
@@ -233,7 +234,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 updateJoystickBallPosition()
                 
                 if startedClickInCircle == true {
-                    let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                    let vector = CGVector(dx: joystickBall.position.x - joystickContainer.position.x, dy: joystickBall.position.y - joystickContainer.position.y)
                     movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
                 }
                 
@@ -346,17 +347,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
         angle = atan2(movement.dy, movement.dx)
-        var newAngle : CGFloat = angle
-        print(angle)
-        if (angle > (Double.pi / 2) || angle < -(Double.pi / 2)) {
-            print("Flip")
-            shotgun.yScale = -1
-//            newAngle =
-        } else {
-            shotgun.yScale = 1
-        }
-        
-        shotgun.zRotation = newAngle
+        shotgun.zRotation = angle
         
         healthBarBackground.position = CGPoint(x: player.position.x, y: player.position.y - player.size.height / 2 - 15)
         
@@ -369,6 +360,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                
         joystickContainer.position = CGPoint(x: player.position.x, y: player.position.y - 500)
         joystickBall.position = CGPoint(x: joystickContainer.position.x + xDistance, y: joystickContainer.position.y + yDistance)
+        
+        levelBar.position = CGPoint(x: player.position.x, y: player.position.y + 600)
+        
         
     }
     
@@ -404,8 +398,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createBullet() {
-        let bullet : SKSpriteNode = SKSpriteNode(color: .orange, size: CGSize(width: 20, height: 20))
+        let bullet : SKSpriteNode = SKSpriteNode(imageNamed: "Bullet")
         
+        bullet.size = CGSize(width: 20, height: 40)
         bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.frame.size)
         bullet.physicsBody?.affectedByGravity = false
         bullet.physicsBody?.isDynamic = true
@@ -414,7 +409,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.collisionBitMask = 0
         bullet.physicsBody?.allowsRotation = false
         bullet.zPosition = 3
-        
         bullet.position = shotgun.position
         
         var force : CGVector = CGVector(dx: 0, dy: 0)
@@ -424,8 +418,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
 //        print("Angle: \(angle)")
         
-        force.dx *= movementSpeed * 2
-        force.dy *= movementSpeed * 2
+        force.dx *= movementSpeed * 120
+        force.dy *= movementSpeed * 120
         
         worldNode.addChild(bullet)
                 
@@ -543,11 +537,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(option3)
         upgradeOptions.append(option3)
         
-        option1.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 1, y: (player.position.y - frame.height / 2) + frame.height / 2)
+        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
         option1.zPosition = 10
-        option2.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 3, y: (player.position.y - frame.height / 2) + frame.height / 2)
+        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
         option2.zPosition = 10
-        option3.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 5, y: (player.position.y - frame.height / 2) + frame.height / 2)
+        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
         option3.zPosition = 10
         
         for i in 0..<3 {
