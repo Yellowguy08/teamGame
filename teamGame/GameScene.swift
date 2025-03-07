@@ -31,7 +31,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var globalTouchLocation: CGPoint = .zero
     
     var movementDirection: CGPoint = .zero
-    var health: CGFloat = 50
+    var health: CGFloat = 100
     var upgradeOptions : [SKSpriteNode] = []
     
     var selectUpgrade : Bool = false
@@ -103,7 +103,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = self
     }
     func didBegin(_ contact: SKPhysicsContact) {
-        if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
+        if (contact.bodyA.categoryBitMask == 4 && contact.bodyB.categoryBitMask == 2) || (contact.bodyB.categoryBitMask == 4 && contact.bodyA.categoryBitMask == 2) {
             health -= 5
             print("Health: \(health)")
             
@@ -498,11 +498,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(option3)
         upgradeOptions.append(option3)
         
-        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
+        option1.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 1, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option1.zPosition = 10
-        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
+        option2.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 3, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option2.zPosition = 10
-        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
+        option3.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 5, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option3.zPosition = 10
         
         for i in 0..<3 {
