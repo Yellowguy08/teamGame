@@ -33,7 +33,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var angle : CGFloat = 0
     
     var death: Bool = false
-    var health: CGFloat = 1000
+    var health: CGFloat = 100
     
     var globalTouchLocation: CGPoint = .zero
     
@@ -45,7 +45,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Upgrades
     var weaponSpeed : Double = 5.00
     var weaponDamage : Double = 10.00
-    var movementSpeed : CGFloat = 20.0
+    var movementSpeed : CGFloat = 200
     var spread : Int = 1
     
     var enemies : [SKSpriteNode] = []
@@ -347,6 +347,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
         angle = atan2(movement.dy, movement.dx)
+                
+        if (angle > (Double.pi / 2) || angle < -(Double.pi / 2)) {
+            shotgun.yScale = -1
+        } else {
+            shotgun.yScale = 1
+        }
+        
         shotgun.zRotation = angle
         
         healthBarBackground.position = CGPoint(x: player.position.x, y: player.position.y - player.size.height / 2 - 15)
@@ -410,6 +417,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.allowsRotation = false
         bullet.zPosition = 3
         bullet.position = shotgun.position
+        bullet.zRotation = shotgun.zRotation
         
         var force : CGVector = CGVector(dx: 0, dy: 0)
         
@@ -537,11 +545,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(option3)
         upgradeOptions.append(option3)
         
-        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
+        option1.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 1, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option1.zPosition = 10
-        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
+        option2.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 3, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option2.zPosition = 10
-        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
+        option3.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 5, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option3.zPosition = 10
         
         for i in 0..<3 {
