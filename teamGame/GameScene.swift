@@ -311,7 +311,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
         angle = atan2(movement.dy, movement.dx)
-        shotgun.zRotation = angle
+        var newAngle : CGFloat = angle
+        print(angle)
+        if (angle > (Double.pi / 2) || angle < -(Double.pi / 2)) {
+            print("Flip")
+            shotgun.yScale = -1
+//            newAngle =
+        } else {
+            shotgun.yScale = 1
+        }
+        
+        shotgun.zRotation = newAngle
         
         healthBarBackground.position = CGPoint(x: player.position.x, y: player.position.y - player.size.height / 2 - 15)
         
