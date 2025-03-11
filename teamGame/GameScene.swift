@@ -6,7 +6,7 @@ import GameController
 class GameScene: SKScene, SKPhysicsContactDelegate {
     let cam = SKCameraNode()
 
-    let upgrades : [String] = ["WeaponSpeed", "Damage", "MovementSpeed", "Spread"]
+    let upgrades : [String] = ["WeaponSpeed", "MovementSpeed"]
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
@@ -178,7 +178,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if ((contact.bodyA.categoryBitMask == 4 && contact.bodyB.categoryBitMask == 8) || (contact.bodyA.categoryBitMask == 8 && contact.bodyB.categoryBitMask == 4)) {
             contact.bodyA.node?.removeFromParent()
             contact.bodyB.node?.removeFromParent()
-            xp += 10 - (Double(level) * 0.1)
+            xp += 100 - (Double(level) * 0.1)
         }
         
 //        if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
@@ -591,7 +591,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for i in 0..<3 {
             let randomNum = Int.random(in: 0..<upgrades.count)
             let label : SKLabelNode = SKLabelNode(text: upgrades[randomNum])
-            upgrades.remove(at: randomNum)
             upgradeOptions[i].addChild(label)
 //            print(label.text)
             label.fontColor = .black
