@@ -14,11 +14,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     var startedClickInCircle: Bool = false
     
+    var ZombieWalkTextures: [SKTexture] = []
     var gameOver : Bool =  false
     var gameStarted : Bool = false
     
     var levelBar : SKSpriteNode = SKSpriteNode()
     var levelLabel : SKLabelNode = SKLabelNode()
+    var backgroundBar : SKSpriteNode = SKSpriteNode()
+    
+    var worldBorder : SKSpriteNode = SKSpriteNode()
     
     var healthBarBackground: SKSpriteNode!
     var healthBar: SKSpriteNode!
@@ -54,6 +58,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(cam)
         self.camera = cam //COMMENT THIS OUT TO TURN CAMERA OFF
 
+        for i in 1...8 {
+            ZombieWalkTextures.append(SKTexture(imageNamed: "ZombieWalk\(i)"))
+        }
+        
         upgradeOptions = []
         worldNode = childNode(withName: "worldNode")
         
@@ -109,8 +117,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         healthBarBackground.addChild(healthBar)
 
         
+        backgroundBar = childNode(withName: "backgroundBar") as! SKSpriteNode
+        backgroundBar.zPosition = 2
+//        levelBar.color = .green
+        
+        worldBorder = childNode(withName: "WorldBorder") as! SKSpriteNode
+        
         levelBar = childNode(withName: "LevelBar") as! SKSpriteNode
-        levelBar.color = .green
+        levelBar.zPosition = 3
+//        levelBar.color = .green
         
         levelLabel = childNode(withName: "Level") as! SKLabelNode
         levelLabel.text = "Level: \(level)"
@@ -162,7 +177,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if ((contact.bodyA.categoryBitMask == 4 && contact.bodyB.categoryBitMask == 8) || (contact.bodyA.categoryBitMask == 8 && contact.bodyB.categoryBitMask == 4)) {
             contact.bodyA.node?.removeFromParent()
             contact.bodyB.node?.removeFromParent()
-            xp += 100 - (Double(level) * 0.1)
+            xp += 10 - (Double(level) * 0.1)
         }
         
 //        if contact.bodyA.categoryBitMask == 4 || contact.bodyB.categoryBitMask == 4 {
@@ -317,11 +332,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
-//        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
-//        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
-        
-        
-       
+        //border
+        player.position.x = max(min(player.position.x, worldBorder.frame.maxX - player.size.width / 2), worldBorder.frame.minX + player.size.width / 2)
+        player.position.y = max(min(player.position.y, worldBorder.frame.maxY - player.size.height / 2), worldBorder.frame.minY + player.size.height / 2)
         
         if movementDirection.x > 0 {
             player.xScale = 0.2
@@ -369,12 +382,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         joystickBall.position = CGPoint(x: joystickContainer.position.x + xDistance, y: joystickContainer.position.y + yDistance)
         
         levelBar.position = CGPoint(x: player.position.x, y: player.position.y + 600)
-        
+        backgroundBar.position = CGPoint(x: player.position.x, y: player.position.y + 600)
         
     }
     
     func createEnemy() {
-        enemy = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 100))
+        let enemy: SKSpriteNode = SKSpriteNode(imageNamed: "ZombieWalk1")
+        enemy.size = CGSize(width: player.size.width + 20, height: player.size.height + 20)
+        
         let priority = Int.random(in: 0...1)
         
         var x: Int
@@ -401,7 +416,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
         enemyMove(enemy: enemy)
         
-
+        let zombieAnimation = SKAction.animate(withNormalTextures: ZombieWalkTextures, timePerFrame: 0.1)
+        enemy.run(SKAction.repeatForever(zombieAnimation))
     }
     
     func createBullet() {
