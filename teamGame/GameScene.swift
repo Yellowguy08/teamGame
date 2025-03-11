@@ -2,14 +2,20 @@ import Foundation
 import SpriteKit
 import GameplayKit
 import GameController
-//
+extension CGPoint {
+    func distance(to point: CGPoint) -> CGFloat {
+        return sqrt(pow(x - point.x, 2) + pow(y - point.y, 2))
+    }
+}
 class GameScene: SKScene, SKPhysicsContactDelegate {
-    
+    let cam = SKCameraNode()
+
     let upgrades : [String] = ["WeaponSpeed", "Damage", "MovementSpeed", "Spread"]
     
     let joystickContainer = SKSpriteNode(imageNamed: "joystickContainer")
     let joystickBall = SKSpriteNode(imageNamed: "joystickBall")
     let shotgun = SKSpriteNode(imageNamed: "Shotgun")
+    let bulletLifetime: Double = 1.5
 
     var startedClickInCircle: Bool = false
     
@@ -32,7 +38,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var angle : CGFloat = 0
     
     var death: Bool = false
-    var health: CGFloat = 1000
+    var health: CGFloat = 100
+    
+    var globalTouchLocation: CGPoint = .zero
+    
     var movementDirection: CGPoint = .zero
     var upgradeOptions : [SKSpriteNode] = []
     
@@ -41,17 +50,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Upgrades
     var weaponSpeed : Double = 5.00
     var weaponDamage : Double = 10.00
-    var movementSpeed : CGFloat = 200.0
+    var movementSpeed : CGFloat = 200
     var spread : Int = 1
     
     var enemies : [SKSpriteNode] = []
     
+    
     override func didMove(to view: SKView) {
+        addChild(cam)
+        self.camera = cam //COMMENT THIS OUT TO TURN CAMERA OFF
+
         upgradeOptions = []
         worldNode = childNode(withName: "worldNode")
         
         worldNode.addChild(joystickContainer)
         worldNode.addChild(joystickBall)
+        joystickContainer.zPosition = 3
+        joystickBall.zPosition = 3
         
         joystickContainer.position = CGPoint(x: frame.midX, y: frame.midY - 500)
         joystickBall.position = joystickContainer.position
@@ -83,6 +98,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.physicsBody?.collisionBitMask = 0
             player.physicsBody?.affectedByGravity = false
             player.physicsBody?.isDynamic = true
+            player.zPosition = 3
             worldNode.addChild(player)
         }
 
@@ -111,17 +127,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
  
 
         shoot()
+
         physicsWorld.contactDelegate = self
     }
     func didBegin(_ contact: SKPhysicsContact) {
         let bodyA = contact.bodyA
         let bodyB = contact.bodyB
-        
-        print("Collision bodys: \(bodyA.categoryBitMask) - \(bodyB.categoryBitMask)")
-        
-        if (bodyA.categoryBitMask == 2 && bodyB.categoryBitMask == 4) || (bodyA.categoryBitMask == 4 && bodyB.categoryBitMask == 2) {
+
+        if (bodyA.categoryBitMask == 2 && bodyB.categoryBitMask == 4) ||
+           (bodyA.categoryBitMask == 4 && bodyB.categoryBitMask == 2) {
+
             print("Player-Enemy Contact Detected")
-            health -= 10
+            health -= 5
             print("Health: \(health)")
             updateHealthBar()
 
@@ -135,19 +152,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 player.removeFromParent()
                 healthBarBackground.removeFromParent()
                 shotgun.removeFromParent()
+                joystickBall.removeFromParent()
+                joystickContainer.removeFromParent()
                 gameOver = true
                 death = true
                 print("Game Over")
             }
         }
-
-        if (bodyA.categoryBitMask == 8 && bodyB.categoryBitMask == 4) || (bodyA.categoryBitMask == 4 && bodyB.categoryBitMask == 8) {
-           print("Bullet-Enemy Contact Detected")
-            if bodyA.categoryBitMask == 4 {
-                bodyA.node?.removeFromParent()
-            } else {
-                bodyB.node?.removeFromParent()
-            }
+        
+        else if (bodyA.categoryBitMask == 8 && bodyB.categoryBitMask == 4) ||
+                (bodyA.categoryBitMask == 4 && bodyB.categoryBitMask == 8) {
+            
+            print("Bullet-Enemy Contact Detected")
+            if bodyA.categoryBitMask == 8 { bodyA.node?.removeFromParent() }
+            if bodyB.categoryBitMask == 8 { bodyB.node?.removeFromParent() }
+            if bodyA.categoryBitMask == 4 { bodyA.node?.removeFromParent() }
+            if bodyB.categoryBitMask == 4 { bodyB.node?.removeFromParent() }
         }
     }
 
@@ -156,6 +176,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for touch in touches {
             
             let location = touch.location(in: self)
+     globalTouchLocation = location
+
             if (!worldNode.isPaused) {
                 createEnemy()
                 
@@ -198,42 +220,45 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if (!worldNode.isPaused) {
-            updateJoystickBallPosition(touches: touches)
+            updateJoystickBallPosition()
             if let touch = touches.first {
                 let location = touch.location(in: self)
+
+         globalTouchLocation = location
+                updateJoystickBallPosition()
                 
                 if startedClickInCircle == true {
-                    let vector = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+                    let vector = CGVector(dx: joystickBall.position.x - joystickContainer.position.x, dy: joystickBall.position.y - joystickContainer.position.y)
                     movementDirection = CGPoint(x: vector.dx / joystickContainer.size.width, y: vector.dy / joystickContainer.size.height)
                 }
                 
                 
             }
         }
-    }
-    
-    func updateJoystickBallPosition(touches: Set<UITouch>) {
+    } //updates joystick
+
+
+
+
+   func updateJoystickBallPosition() {
         if startedClickInCircle == true {
-            if let touch = touches.first {
-                let location = touch.location(in: self)
-                
-                let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
-                let angle = atan2(v.dy, v.dx)
-                
-                _ = angle * CGFloat(180/Double.pi)
-                
-                let length:CGFloat = joystickContainer.frame.height/2
-                
-                let xDistance:CGFloat = sin(angle - 1.57079633) * length
-                let yDistance:CGFloat = cos(angle - 1.57079633) * length
-                
-                if (CGRectContainsPoint(joystickContainer.frame, location)) {
-                    joystickBall.position = location
-                } else {
-                    joystickBall.position = CGPointMake(joystickContainer.position.x - xDistance, joystickContainer.position.y + yDistance)
-                }
-                
+            let location = globalTouchLocation
+            let v = CGVector(dx: location.x - joystickContainer.position.x, dy: location.y - joystickContainer.position.y)
+            let angle = atan2(v.dy, v.dx)
+            
+//                let deg = angle * CGFloat(180/Double.pi)
+            
+            let length:CGFloat = joystickContainer.frame.height/2
+            
+            let xDistance:CGFloat = sin(angle - 1.57079633) * length
+            let yDistance:CGFloat = cos(angle - 1.57079633) * length
+            
+            if (CGRectContainsPoint(joystickContainer.frame, location)) {
+                joystickBall.position = location
+            } else {
+                joystickBall.position = CGPointMake(joystickContainer.position.x - xDistance, joystickContainer.position.y + yDistance)
             }
+            
         }
     }
     
@@ -286,8 +311,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         player.position = CGPoint(x: player.position.x + movement.dx, y: player.position.y + movement.dy)
         
-        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
-        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
+//        player.position.x = max(min(player.position.x, frame.maxX - player.size.width / 2), frame.minX + player.size.width / 2)
+//        player.position.y = max(min(player.position.y, frame.maxY - player.size.height / 2), frame.minY + player.size.height / 2)
         
         
         if movementDirection.x > 0 {
@@ -312,13 +337,43 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
        
+        if gameOver == true {
+            worldNode.isPaused = true
+            physicsWorld.speed = 1
+        }
+        
         shotgun.position = CGPoint(x: player.position.x, y: player.position.y)
         angle = atan2(movement.dy, movement.dx)
+                
+        if (angle > (Double.pi / 2) || angle < -(Double.pi / 2)) {
+            shotgun.yScale = -1
+        } else {
+            shotgun.yScale = 1
+        }
+        
+        worldNode.enumerateChildNodes(withName: "bullet") { (node, stop) in
+                    if let bullet = node as? SKSpriteNode {
+                        self.updateBulletTracking(bullet: bullet)
+                    }
+                }
+        
         shotgun.zRotation = angle
         
         healthBarBackground.position = CGPoint(x: player.position.x, y: player.position.y - player.size.height / 2 - 15)
-
+        
         updateHealthBar()
+
+        cam.position = player.position
+        
+        let xDistance = joystickBall.position.x - joystickContainer.position.x
+        let yDistance = joystickBall.position.y - joystickContainer.position.y
+               
+        joystickContainer.position = CGPoint(x: player.position.x, y: player.position.y - 500)
+        joystickBall.position = CGPoint(x: joystickContainer.position.x + xDistance, y: joystickContainer.position.y + yDistance)
+        
+        levelBar.position = CGPoint(x: player.position.x, y: player.position.y + 600)
+        
+        
     }
     
     func createEnemy() {
@@ -343,16 +398,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.categoryBitMask = 4
         enemy.physicsBody?.contactTestBitMask = 2
         enemy.physicsBody?.allowsRotation = false
+        enemy.zPosition = 3
         
         worldNode.addChild(enemy)
-        
+                
         enemyMove(enemy: enemy)
     }
 
     
     func createBullet() {
-        let bullet : SKSpriteNode = SKSpriteNode(color: .orange, size: CGSize(width: 20, height: 20))
-        
+        let bullet = SKSpriteNode(imageNamed: "Bullet")
+        bullet.size = CGSize(width: 20, height: 40)
         bullet.physicsBody = SKPhysicsBody(rectangleOf: bullet.frame.size)
         bullet.physicsBody?.affectedByGravity = false
         bullet.physicsBody?.isDynamic = true
@@ -360,25 +416,66 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bullet.physicsBody?.contactTestBitMask = 4
         bullet.physicsBody?.collisionBitMask = 0
         bullet.physicsBody?.allowsRotation = false
-        
+        bullet.physicsBody?.linearDamping = 0.5
+        bullet.zPosition = 3
         bullet.position = shotgun.position
-        
-        var force : CGVector = CGVector(dx: 0, dy: 0)
-        
-        force.dx = cos(angle)
-        force.dy = sin(angle)
-        
-//        print("Angle: \(angle)")
-        
-        force.dx *= movementSpeed * 2
-        force.dy *= movementSpeed * 2
-        
+        bullet.zRotation = shotgun.zRotation
         worldNode.addChild(bullet)
-                
-        bullet.physicsBody?.applyForce(force)
-        
+        bullet.name = "bullet"
+
+        let angle = shotgun.zRotation
+        let bulletSpeed: CGFloat = 200
+        let bulletVelocity = CGVector(
+            dx: cos(angle) * bulletSpeed + movement.dx,
+            dy: sin(angle) * bulletSpeed + movement.dy
+        )
+        bullet.physicsBody?.velocity = bulletVelocity
+
+        bullet.run(SKAction.sequence([
+            SKAction.wait(forDuration: bulletLifetime),
+            SKAction.removeFromParent()
+        ]))
     }
+
+
     
+    func updateBulletTracking(bullet: SKSpriteNode) {
+        guard let closestEnemy = findClosestEnemy(to: bullet.position) else { return }
+        
+        let distance = bullet.position.distance(to: closestEnemy.position)
+        let maxTrackingDistance: CGFloat = 300 // Pixels
+        
+        if distance < maxTrackingDistance {
+            let dx = closestEnemy.position.x - bullet.position.x
+            let dy = closestEnemy.position.y - bullet.position.y
+            let angle = atan2(dy, dx)
+            
+            let trackingSpeed: CGFloat = 20
+            let forceX = cos(angle) * trackingSpeed
+            let forceY = sin(angle) * trackingSpeed
+            
+            bullet.physicsBody?.applyForce(CGVector(dx: forceX, dy: forceY))
+            bullet.zRotation = angle
+        }
+    }
+
+    
+    func findClosestEnemy(to position: CGPoint) -> SKSpriteNode? {
+            var closestEnemy: SKSpriteNode?
+            var closestDistance: CGFloat = .infinity
+
+            for node in worldNode.children {
+                if let enemy = node as? SKSpriteNode, enemy != player, enemy.physicsBody?.categoryBitMask == 4 { // Check if it's an enemy
+                    let distance = position.distance(to: enemy.position)
+                    if distance < closestDistance {
+                        closestDistance = distance
+                        closestEnemy = enemy
+                    }
+                }
+            }
+            return closestEnemy
+        }
+
     func upgrade(upgradeName : String) {
         switch (upgradeName) {
         case "WeaponSpeed":
@@ -489,11 +586,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(option3)
         upgradeOptions.append(option3)
         
-        option1.position = CGPoint(x: frame.width / 6 * 1, y: frame.height / 2)
+        option1.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 1, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option1.zPosition = 10
-        option2.position = CGPoint(x: frame.width / 6 * 3, y: frame.height / 2)
+        option2.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 3, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option2.zPosition = 10
-        option3.position = CGPoint(x: frame.width / 6 * 5, y: frame.height / 2)
+        option3.position = CGPoint(x: (player.position.x - frame.width / 2) + frame.width / 6 * 5, y: (player.position.y - frame.height / 2) + frame.height / 2)
         option3.zPosition = 10
         
         for i in 0..<3 {
@@ -510,18 +607,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func shoot() {
-        let shootAction : SKAction = SKAction.run {
-            if self.gameOver == false {
+        let shootAction: SKAction = SKAction.run {
+            if !self.gameOver && self.startedClickInCircle && self.movementDirection != .zero {
                 self.createBullet()
             }
         }
         
-        let wait : SKAction = SKAction.wait(forDuration: 3/weaponSpeed)
-        
-        let shootSequence : SKAction = SKAction.sequence([wait, shootAction])
-        
+        let wait: SKAction = SKAction.wait(forDuration: 3 / weaponSpeed)
+        let shootSequence: SKAction = SKAction.sequence([wait, shootAction])
         worldNode.run(SKAction.repeatForever(shootSequence))
-        
     }
+
 
 }
