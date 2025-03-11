@@ -442,7 +442,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func upgrade(upgradeName : String) {
         switch (upgradeName) {
         case "WeaponSpeed":
-            weaponSpeed += 1.00
+            weaponSpeed += 100.00
             print(weaponSpeed)
             return
         case "Damage":
@@ -466,7 +466,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         
         let spawn : SKAction = SKAction.run {
-            self.createEnemy()
+            if (!self.gameOver) {
+                self.createEnemy()
+            }
         }
         
         let wait : SKAction = SKAction.wait(forDuration: 2, withRange: 1)
@@ -583,17 +585,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
     
+    func getWait() -> SKAction{
+        let wait : SKAction = SKAction.wait(forDuration: 3 / self.weaponSpeed)
+        return wait
+    }
+    
     func shoot() {
         let shootAction : SKAction = SKAction.run {
             if self.gameOver == false {
                 self.createBullet()
             }
         }
-        
-        let wait : SKAction = SKAction.wait(forDuration: 3/weaponSpeed)
-        
-        let shootSequence : SKAction = SKAction.sequence([wait, shootAction])
-        
-        worldNode.run(SKAction.repeatForever(shootSequence))
+                
+        worldNode.run(SKAction.repeatForever(SKAction.sequence([getWait(), shootAction])))
     }
 }
