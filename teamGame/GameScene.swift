@@ -389,7 +389,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func createEnemy() {
         let enemy: SKSpriteNode = SKSpriteNode(imageNamed: "ZombieWalk1")
-        enemy.size = CGSize(width: player.size.width + 20, height: player.size.height + 20)
+        enemy.size = CGSize(width: player.size.width + 35, height: player.size.height + 20)
         
         let priority = Int.random(in: 0...1)
         
