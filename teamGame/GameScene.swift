@@ -131,6 +131,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLabel.text = "Level: \(level)"
         
         shoot()
+        spawnEnemy()
 
         physicsWorld.contactDelegate = self
     }
@@ -216,7 +217,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
      globalTouchLocation = location
 
             if (!worldNode.isPaused) {
-                createEnemy()
                 
                 if (CGRectContainsPoint(joystickContainer.frame, location)) {
                     startedClickInCircle = true
@@ -314,6 +314,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(_ currentTime: TimeInterval) {
+        
        // let dTime = CGFloat(currentTime)
         
         movement = CGVector(dx: (movementDirection.x * movementSpeed)/10, dy: (movementDirection.y * movementSpeed)/10)
@@ -395,6 +396,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var x: Int
         var y: Int
         
+        let userX : Double = player.position.x - frame.width / 2
+        let userY : Double = player.position.y - frame.height / 2
+        
         if priority == 1 {
             x = Int.random(in: 0...Int(frame.width))
             y = Int.random(in: 0...1) == 1 ? Int(frame.height + CGFloat(Int(enemy.size.height))) : 0 - Int(enemy.size.height)
@@ -403,7 +407,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             y = Int.random(in: 0...Int(frame.height))
         }
         
-        enemy.position = CGPoint(x: x, y: y)
+        enemy.position = CGPoint(x: userX + Double(x), y: userY + Double(y))
         enemy.physicsBody = SKPhysicsBody(rectangleOf: enemy.frame.size)
         enemy.physicsBody?.affectedByGravity = false
         enemy.physicsBody?.isDynamic = true
@@ -454,7 +458,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func upgrade(upgradeName : String) {
         switch (upgradeName) {
         case "WeaponSpeed":
-            weaponSpeed += 1.00
+            weaponSpeed += 100.00
             print(weaponSpeed)
             return
         case "Damage":
@@ -472,6 +476,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         default:
             return
         }
+    }
+    
+    func spawnEnemy() {
+        
+        
+        let spawn : SKAction = SKAction.run {
+            if (!self.gameOver) {
+                self.createEnemy()
+            }
+        }
+        
+        let wait : SKAction = SKAction.wait(forDuration: 2, withRange: 1)
+        
+        let sequence : SKAction = SKAction.sequence([wait, spawn])
+        
+        worldNode.run(SKAction.repeatForever(sequence))
     }
     
     func enemyMove(enemy: SKSpriteNode) {
@@ -581,17 +601,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
     
+    func getWait() -> SKAction{
+        let wait : SKAction = SKAction.wait(forDuration: 3 / self.weaponSpeed)
+        return wait
+    }
+    
     func shoot() {
         let shootAction : SKAction = SKAction.run {
             if self.gameOver == false {
                 self.createBullet()
             }
         }
-        
-        let wait : SKAction = SKAction.wait(forDuration: 3/weaponSpeed)
-        
-        let shootSequence : SKAction = SKAction.sequence([wait, shootAction])
-        
-        worldNode.run(SKAction.repeatForever(shootSequence))
+                
+        worldNode.run(SKAction.repeatForever(SKAction.sequence([getWait(), shootAction])))
     }
 }
