@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "create a pixel upgrade card that says Reload Speed Up, with a reload icon,  make sure the Reload Speed Up text is spelled right, make the background inner part a purple gradient, and the border line blue with a gold lining and gold corners.jpg",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
