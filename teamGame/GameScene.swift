@@ -22,6 +22,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var ZombieWalkTextures: [SKTexture] = []
     var gameOver : Bool =  false
     var gameStarted : Bool = false
+    let maxEnemies = 50 // change for increased difficulty
     
     var levelBar : SKSpriteNode = SKSpriteNode()
     var levelLabel : SKLabelNode = SKLabelNode()
@@ -142,9 +143,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
  
 
         shoot()
-        spawnEnemy()
+        
+        let healAction = SKAction.run(healPlayer)
+        let waitToHeal = SKAction.wait(forDuration: 20) // time b4 heal
+        let healSequence = SKAction.sequence([healAction, waitToHeal])
+        let repeatHeal = SKAction.repeatForever(healSequence)
+        self.run(repeatHeal)
+
 
         physicsWorld.contactDelegate = self
+        let spawnAction = SKAction.run(spawnEnemy)
+            let waitAction = SKAction.wait(forDuration: 2) // Adjust to control spawn rate
+            let spawnSequence = SKAction.sequence([spawnAction, waitAction])
+            let repeatSpawn = SKAction.repeatForever(spawnSequence)
+            worldNode.run(repeatSpawn)
     }
     func didBegin(_ contact: SKPhysicsContact) {
         let bodyA = contact.bodyA
@@ -194,6 +206,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             if bodyB.categoryBitMask == 8 { bodyB.node?.removeFromParent() }
             if bodyA.categoryBitMask == 4 { bodyA.node?.removeFromParent() }
             if bodyB.categoryBitMask == 4 { bodyB.node?.removeFromParent() }
+            cleanupEnemies()
+            xp += 100
+            print("XP Gained: \(xp)")
         }
     }
     
@@ -242,22 +257,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
     }//end touchesbegan
-    
-    func updateHealthBar() {
-        let healthPercentage = max(health / 100, 0)
-        healthBar.size.width = 100 * healthPercentage
-        
-        healthBar.position.x = -50
-        
-        if healthPercentage > 0.5 {
-            healthBar.color = .green
-        } else if healthPercentage > 0.2 {
-            healthBar.color = .yellow
-        } else {
-            healthBar.color = .red
-        }
-//        print("Health Bar: \(healthBar.size.width)")
-    }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if (!worldNode.isPaused) {
@@ -346,6 +345,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if (xp == 1000 && !worldNode.isPaused) {
             levelUp()
+            health += 25
         }
         
         _ = CGFloat(currentTime)
@@ -418,8 +418,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
     
+    func cleanupEnemies() {
+        enemies = enemies.filter {
+            $0.parent != nil  // Only keep enemies still in the scene
+        }
+    }
+
+    
     func createEnemy() {
+        guard enemies.count < maxEnemies else {
+                print("Max enemies reached (\(maxEnemies))")
+                return
+            }
+        
         let enemy: SKSpriteNode = SKSpriteNode(imageNamed: "ZombieWalk1")
+        
         enemy.size = CGSize(width: player.size.width + 35, height: player.size.height + 20)
         
         let priority = Int.random(in: 0...1)
@@ -521,6 +534,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
+    func healPlayer() {
+        health = min(health + 5, 100)
+        updateHealthBar()
+    }
     
     func findClosestEnemy(to position: CGPoint) -> SKSpriteNode? {
             var closestEnemy: SKSpriteNode?
@@ -614,44 +631,31 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         movementDirection = .zero
     }
     
-    func rainbowXP() {
-        let wait : SKAction = SKAction.wait(forDuration: 0.3)
-        
-        let red : SKAction = SKAction.run {
-            self.levelBar.color = .red
+        func rainbowXP() {
+        let colorDuration: TimeInterval = 1.0 // Duration for each color transition
+        let waitDuration: TimeInterval = 0.1
+
+        let colors: [UIColor] = [.red, .orange, .yellow, .green, .blue, .purple]
+        var actions: [SKAction] = []
+
+        for (index, color) in colors.enumerated() {
+            _ = colors[(index + 1) % colors.count]
+            let colorize = SKAction.colorize(with: color, colorBlendFactor: 1.0, duration: colorDuration)
+            let wait = SKAction.wait(forDuration: waitDuration)
+            
+            actions.append(colorize)
+            actions.append(wait)
         }
-        
-        let orange : SKAction = SKAction.run {
-            self.levelBar.color = .orange
-        }
-        
-        let yellow : SKAction = SKAction.run {
-            self.levelBar.color = .yellow
-        }
-        
-        let green : SKAction = SKAction.run {
-            self.levelBar.color = .green
-        }
-        
-        let blue : SKAction = SKAction.run {
-            self.levelBar.color = .blue
-        }
-        
-        let pink : SKAction = SKAction.run {
-            self.levelBar.color = .magenta
-        }
-        
-        let sequence : SKAction = SKAction.sequence([orange, wait, green, wait, blue, wait, red, wait, yellow, wait, pink, wait])
-        
-        let rpeat : SKAction = SKAction.repeatForever(sequence)
+
+        let sequence = SKAction.sequence(actions)
+        let rpeat = SKAction.repeatForever(sequence)
         
         levelBar.run(rpeat)
-        
     }
     
     func viewUpgrades() {
                 
-        var upgrades = self.upgrades
+        let upgrades = self.upgrades
         
         let option1 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
         let option2 : SKSpriteNode = SKSpriteNode(color: .green, size: CGSize(width: 200, height: 250))
